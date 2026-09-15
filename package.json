@@ -11,7 +11,8 @@
     "build": "npm run typecheck && electron-vite build",
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "pack": "npm run daemon && npm run build && MOHO_BUILD=$(git rev-parse --short HEAD)$(git diff --quiet HEAD || echo -dirty) electron-builder --linux AppImage",
+    "pack": "npm run daemon && npm run build && MOHO_BUILD=$(git rev-parse --short HEAD)$(git diff --quiet HEAD || echo -dirty) electron-builder --linux",
+    "pack:deb": "npm run daemon && npm run build && MOHO_BUILD=$(git rev-parse --short HEAD)$(git diff --quiet HEAD || echo -dirty) electron-builder --linux deb",
     "pack:dir": "npm run daemon && npm run build && MOHO_BUILD=$(git rev-parse --short HEAD)$(git diff --quiet HEAD || echo -dirty) electron-builder --linux dir",
     "daemon": "./scripts/build-daemon.sh",
     "deploy": "npm run pack && ./scripts/install-desktop.sh",
@@ -28,7 +29,7 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "electron": "^33.2.1",
-    "electron-builder": "^25.1.8",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^2.3.0",
     "hls.js": "^1.7.2",
     "livekit-client": "^2.22.2",
@@ -40,6 +41,9 @@
   "build": {
     "appId": "com.salastil.moho",
     "productName": "moho",
+    "toolsets": {
+      "appimage": "1.0.3"
+    },
     "files": [
       "out/**/*"
     ],
@@ -55,13 +59,17 @@
     ],
     "linux": {
       "target": [
-        "AppImage"
+        "AppImage",
+        "deb"
       ],
+      "maintainer": "Salastil <noreply@github.com>",
       "category": "Network",
       "icon": "resources/icons/moho.png",
       "desktop": {
-        "Name": "moho",
-        "Comment": "Unified chat client for IRC, Discord, Sneedchat and Matrix"
+        "entry": {
+          "Name": "moho",
+          "Comment": "Unified chat client for IRC, Discord, Sneedchat and Matrix"
+        }
       },
       "extraResources": [
         {

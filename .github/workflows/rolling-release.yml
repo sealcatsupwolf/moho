@@ -219,7 +219,7 @@ jobs:
       # --publish never because there is no publish configuration and no token
       # in this job - saying so means a later package.json change cannot
       # quietly turn a build job into a publishing one.
-      - name: pack the AppImage
+      - name: pack Linux packages
         run: npm run pack -- --publish never
 
       # Here to be read on the first few runs: it says how much headroom there
@@ -227,13 +227,14 @@ jobs:
       - run: df -h /
         if: always()
 
-      # Only the AppImage. electron-builder also emits a .blockmap and a
-      # latest-linux.yml for its own updater, and the release is meant to hold
-      # exactly two files.
+      # Both AppImage and deb. electron-builder also emits a .blockmap and a
+      # latest-linux.yml for its own updater.
       - uses: actions/upload-artifact@v4
         with:
           name: linux
-          path: dist/*.AppImage
+          path: |
+            dist/*.AppImage
+            dist/*.deb
           if-no-files-found: error
           retention-days: 7
 
@@ -424,10 +425,10 @@ jobs:
       - name: what was built
         run: |
           ls -l artifacts
-          # Two files, no more and no fewer. If electron-builder ever starts
-          # emitting something else into the glob, this says so here rather
-          # than by surprise on the release page.
-          test "$(find artifacts -maxdepth 1 -type f | wc -l)" -eq 2
+          # Three files, no more and no fewer: AppImage, deb, and Windows exe.
+          # If electron-builder ever starts emitting something else into the
+          # glob, this says so here rather than by surprise on the release page.
+          test "$(find artifacts -maxdepth 1 -type f | wc -l)" -eq 3
 
       # A release is tied to a tag, so a rolling release means a moving tag.
       # The refs API rather than `git push -f` because it needs no checkout
@@ -475,7 +476,8 @@ jobs:
             echo
             echo "| file | platform |"
             echo "| --- | --- |"
-            echo "| \`moho-$BUILD.AppImage\` | Linux x86_64 - mark it executable and run it |"
+            echo "| \`moho-$BUILD.AppImage\` | Linux x86_64 - portable AppImage (mark executable and run) |"
+            echo "| \`moho-$BUILD.deb\` | Ubuntu / Debian x86_64 - native package with AppArmor sandboxing |"
             echo "| \`moho-$BUILD.exe\` | Windows x64 - a per-user NSIS installer, no administrator needed |"
             echo
             echo "Each carries the \`nobilis\` daemon built alongside it, so the app and"

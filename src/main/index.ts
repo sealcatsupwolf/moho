@@ -227,7 +227,7 @@ function createWindow(): void {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: true
     }
   })
 
@@ -372,7 +372,7 @@ function openPopout(bufferId: string, title?: string): void {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      sandbox: true,
       additionalArguments: [`${POPOUT_FLAG}${bufferId}`]
     }
   })
@@ -798,6 +798,21 @@ app.whenReady().then(() => {
   // A losing second instance is on its way out; it must not spawn a daemon,
   // claim a tray icon or register a hotkey on the way.
   if (!isPrimaryInstance) return
+
+  // On Debian systems, if the AppImage is run, the Electron process may run
+  // silently in an unsafe `--no-sandbox` mode. We check for this and provide
+  // guidance for using the deb package instead.
+  if (app.commandLine.hasSwitch('no-sandbox') && !process.env.MOHO_ALLOW_NO_SANDBOX) {
+    dialog.showErrorBox(
+      'Sandbox Disabled',
+      'Moho refused to start because Chromium sandboxing is disabled (--no-sandbox).\n\n' +
+      'Running without a sandbox exposes your system to security risks.\n\n' +
+      '• On Ubuntu/Debian: Please install the .deb package, which includes full AppArmor sandbox support.\n' +
+      '• To bypass this check at your own risk, set MOHO_ALLOW_NO_SANDBOX=1.'
+    )
+    app.quit()
+    return
+  }
 
   // Before anything worth logging happens. Everything the daemon says is
   // piped through `log`, and in a launched build stdout is /dev/null - so
