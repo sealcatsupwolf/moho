@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, memo } from 'react'
 import { Icon, MaskIcon } from './Icon'
 import { ContextMenu, useContextMenu } from './ContextMenu'
 import { bufferMenuEntries } from '../lib/buffermenu'
@@ -733,7 +733,7 @@ interface BufferRowProps {
   status?: string
 }
 
-function BufferRow({
+const BufferRow = memo(function BufferRow({
   buffer,
   active,
   muted,
@@ -892,4 +892,4 @@ function BufferRow({
       {menu && <ContextMenu x={menu.x} y={menu.y} entries={entries} onClose={close} />}
     </>
   )
-}
+})

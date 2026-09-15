@@ -980,7 +980,22 @@ export class ChatStore {
       this.set({ linkUp: up })
       if (up) void this.refreshAll()
     })
-    window.moho.onEvent((frame) => this.handleEvent(frame))
+
+    const eventQueue: NobilisEvent[] = []
+    let eventBatchFrame: number | null = null
+    window.moho.onEvent((frame) => {
+      eventQueue.push(frame)
+      if (eventBatchFrame === null) {
+        eventBatchFrame = requestAnimationFrame(() => {
+          eventBatchFrame = null
+          const batch = [...eventQueue]
+          eventQueue.length = 0
+          for (const event of batch) {
+            this.handleEvent(event)
+          }
+        })
+      }
+    })
     // Both of these arrive from outside and mean "go and look at this", which
     // a window pinned to one conversation has no way to honour. The main
     // window gets them instead; main routes them there.
