@@ -57,15 +57,6 @@ export function inviteGroup(accountId: string, invite: MatrixInvite): RailGroup 
  * exactly like any other entry.
  */
 export const PINNED_GROUP_ID = '~pinned'
-/**
- * The page gathering every mention, across every service.
- *
- * An id with no rail tile behind it, unlike the other two here. The mentions
- * page is reached from the inbox in the header - which already carries the
- * unread count, so a tile would have been a second place saying the same
- * thing while taking a slot in a column that is for servers.
- */
-export const MENTIONS_GROUP_ID = '~mentions'
 
 /**
  * The rail entry collecting direct messages from every service.

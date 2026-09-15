@@ -5,7 +5,7 @@ import { ServerRail } from './components/ServerRail'
 import { MessageList } from './components/MessageList'
 import { MentionsInbox } from './components/MentionsInbox'
 import { MentionsPage } from './components/MentionsPage'
-import { INVITE_PREFIX, MENTIONS_GROUP_ID } from './lib/groups'
+import { INVITE_PREFIX } from './lib/groups'
 import { Composer } from './components/Composer'
 import { MembershipGate } from './components/MembershipGate'
 import { NickList } from './components/NickList'
@@ -76,13 +76,6 @@ export default function App(): JSX.Element {
     return () => store.dispose()
   }, [prefsReady, booted, savedBufferId, savedGroupId, store])
 
-  /**
-   * The mentions page is showing, so nothing in the window is scoped to one
-   * conversation - the header face, the conversation's own tools and the
-   * composer all belong to a buffer that is not on screen.
-   */
-  const onMentionsPage = activePanel === '' && activeGroupId === MENTIONS_GROUP_ID
-
   // Which Kick channels are actually being watched, told to the daemon as it
   // changes. Kick counts watch time from an authenticated subscription and
   // only this side knows what is on screen - see lib/kickwatch.ts for why it
@@ -99,7 +92,7 @@ export default function App(): JSX.Element {
       accounts.find((a) => a.id === allBuffers.find((b) => b.id === id)?.accountId)?.service
     const now = watchedKickBuffers(
       allBuffers,
-      activePanel === '' && !onMentionsPage ? activeBufferId : '',
+      activePanel === '' ? activeBufferId : '',
       watching?.bufferId,
       serviceOf
     )
@@ -113,14 +106,14 @@ export default function App(): JSX.Element {
       // daemon answers rather than treats as a failure.
       void window.moho.rpc('setKickWatching', { bufferId, watching: true }).catch(() => {})
     }
-  }, [booted, allBuffers, accounts, activeBufferId, activePanel, onMentionsPage, watching])
+  }, [booted, allBuffers, accounts, activeBufferId, activePanel, watching])
 
   const openThread = useChat((s) => s.openThread)
 
   // A stale restored id is harmless: it simply resolves to no buffer and the
   // empty state shows, exactly as it would for "".
   const showNickList =
-    !userListFolded && activePanel === '' && !onMentionsPage && buffer?.kind === 'channel'
+    !userListFolded && activePanel === '' && buffer?.kind === 'channel'
 
   const headerTitle =
     activePanel === 'accounts'
@@ -131,11 +124,11 @@ export default function App(): JSX.Element {
         ? 'Downloads'
         : activePanel === 'join'
         ? `Join · ${joinAccount?.displayName ?? ''}`
-        : onMentionsPage
-          ? 'Mentions'
-          : buffer
-            ? bufferDisplayName(buffer.name)
-            : ''
+        : activePanel === 'mentions'
+        ? 'Mentions'
+        : buffer
+          ? bufferDisplayName(buffer.name)
+          : ''
 
   return (
     <div className="app">
@@ -169,7 +162,7 @@ export default function App(): JSX.Element {
                 somewhere you go to find a conversation; this is where you
                 already are when you want to do something to the one you are
                 reading. */}
-            {activePanel === '' && !onMentionsPage && buffer ? (
+            {activePanel === '' && buffer ? (
               <ConversationMenu buffer={buffer} />
             ) : (
               <span className="main-header-title ellipsis">{headerTitle}</span>
@@ -179,7 +172,7 @@ export default function App(): JSX.Element {
                 conversation, which the mentions page is not showing - leaving
                 them there would offer to search a channel that isn't on
                 screen. */}
-            {activePanel === '' && !onMentionsPage && buffer && (
+            {activePanel === '' && buffer && (
               <ConversationTools buffer={buffer} />
             )}
 
@@ -191,7 +184,7 @@ export default function App(): JSX.Element {
                 direct message. */}
             {activePanel === '' && <MentionsInbox />}
 
-            {activePanel === '' && !onMentionsPage && buffer?.kind === 'channel' && (
+            {activePanel === '' && buffer?.kind === 'channel' && (
               <IconButton
                 name={userListFolded ? 'group' : 'group_off'}
                 title={userListFolded ? 'Show members' : 'Hide members'}
@@ -203,7 +196,7 @@ export default function App(): JSX.Element {
                 conversation's own tools: both of these are about how this
                 conversation is being shown, not about the conversation. Last,
                 because it is the one that opens something. */}
-            {activePanel === '' && !onMentionsPage && buffer && <PopOutButton buffer={buffer} />}
+            {activePanel === '' && buffer && <PopOutButton buffer={buffer} />}
             {activePanel !== '' && (
               <IconButton
                 name="close"
@@ -222,7 +215,7 @@ export default function App(): JSX.Element {
             />
           </div>
 
-          {activePanel === '' && activeBufferId !== '' && activeGroupId !== MENTIONS_GROUP_ID && (
+          {activePanel === '' && activeBufferId !== '' && (
             <>
               {/* Above the box, saying why it will not work here yet. */}
               {buffer && <MembershipGate buffer={buffer} />}
@@ -328,7 +321,7 @@ function Body({
   if (activePanel === 'join') return <JoinPanel />
   // The mentions page replaces the log rather than sitting beside it: it is a
   // list of places to go, and every row leads into a conversation.
-  if (activeGroupId === MENTIONS_GROUP_ID) return <MentionsPage />
+  if (activePanel === 'mentions') return <MentionsPage />
   // An invitation stands where the conversation would, because it is the
   // conversation being offered.
   if (activeGroupId.startsWith(INVITE_PREFIX)) return <InvitePanel groupId={activeGroupId} />

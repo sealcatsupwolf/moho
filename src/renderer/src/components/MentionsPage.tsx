@@ -46,6 +46,16 @@ export function MentionsPage(): JSX.Element {
 
   return (
     <div className="mentions-page">
+      <div className="mentions-page-header">
+        <button
+          type="button"
+          className="danger"
+          onClick={() => void store.dismissAllMentions()}
+        >
+          <Icon name="clear_all" />
+          Dismiss All
+        </button>
+      </div>
       {mentions.map((m) => {
         const buffer = buffers.find((b) => b.id === m.bufferId)
         const account = accounts.find((a) => a.id === buffer?.accountId)
@@ -54,8 +64,8 @@ export function MentionsPage(): JSX.Element {
         // buffer list has moved on would hide the very thing being collected.
         const where = buffer ? bufferDisplayName(buffer.name) : 'a closed conversation'
         return (
+          <div key={m.id} className="mention-row-container">
           <button
-            key={m.id}
             type="button"
             className="mention-row"
             // Opens the conversation and scrolls to the message itself, which
@@ -79,6 +89,18 @@ export function MentionsPage(): JSX.Element {
               <span className="mention-text ellipsis">{m.body}</span>
             </span>
           </button>
+            <button
+              type="button"
+              className="mention-dismiss icon-button"
+              title="Dismiss"
+              onClick={(e) => {
+                e.stopPropagation()
+                void store.dismissMention(m.id)
+              }}
+            >
+              <Icon name="close" />
+            </button>
+          </div>
         )
       })}
     </div>

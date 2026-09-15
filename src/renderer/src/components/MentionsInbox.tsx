@@ -3,7 +3,7 @@ import { Icon, IconButton } from './Icon'
 import { HeaderPopover } from './HeaderPopover'
 import { Avatar } from './Avatar'
 import { useChat, usePref, useStore } from '../state/hooks'
-import { isMutedBuffer, MENTIONS_GROUP_ID } from '../lib/groups'
+import { isMutedBuffer } from '../lib/groups'
 import { bufferDisplayName, formatFullTime, formatRelativeTime, serviceLabel } from '../lib/util'
 
 /**
@@ -187,8 +187,7 @@ export function MentionsInbox(): JSX.Element {
             className="mentions-panel-all small"
             onClick={() => {
               setOpen(false)
-              store.setActivePanel('')
-              store.selectGroup(MENTIONS_GROUP_ID)
+              store.setActivePanel('mentions')
             }}
           >
             <Icon name="inbox" size={16} />

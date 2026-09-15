@@ -306,7 +306,7 @@ export interface DiscordModal {
   fields: DiscordModalField[]
 }
 
-export type ActivePanel = '' | 'accounts' | 'settings' | 'join' | 'downloads'
+export type ActivePanel = '' | 'accounts' | 'settings' | 'join' | 'downloads' | 'mentions'
 
 export interface ChatState {
   /** Who is composing, per buffer, with when to stop believing it. */
@@ -1030,6 +1030,23 @@ export class ChatStore {
       this.set({ mentions: await window.moho.rpc<Message[]>('getMentions', { limit: MAX_MENTIONS }) })
     } catch {
       // Leave whatever is already there; a reconnect should not empty it.
+    }
+  }
+
+  async dismissMention(msgId: string): Promise<void> {
+    try {
+      await window.moho.rpc('dismissMention', { msgId })
+      this.set({ mentions: this.state.mentions.filter((m) => m.id !== msgId) })
+    } catch (e) {
+      this.toast('error', `Couldn't dismiss mention: ${(e as Error).message}`)
+    }
+  }
+
+  async dismissAllMentions(): Promise<void> {
+    const ids = this.state.mentions.map((m) => m.id)
+    this.set({ mentions: [] })
+    for (const msgId of ids) {
+      void window.moho.rpc('dismissMention', { msgId }).catch(() => {})
     }
   }
 
@@ -2917,7 +2934,8 @@ export class ChatStore {
     // Being on screen in a window of its own counts as being open, because it
     // is: badging a channel somebody is watching in a second window asks them
     // to go and look at what they are already looking at.
-    if (bufferId !== this.state.activeBufferId && !this.state.popouts.watched.includes(bufferId)) {
+    const isViewingBuffer = this.state.activePanel === '' && bufferId === this.state.activeBufferId
+    if (!isViewingBuffer && !this.state.popouts.watched.includes(bufferId)) {
       const buffer = this.state.buffers.find((b) => b.id === bufferId)
       this.set({
         buffers: this.state.buffers.map((b) =>

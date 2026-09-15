@@ -12,7 +12,6 @@ import {
   isDirectMessage,
   isMutedBuffer,
   INVITE_PREFIX,
-  MENTIONS_GROUP_ID,
   PINNED_GROUP_ID,
   pinnedGroup,
   visibleGroups,
@@ -93,18 +92,6 @@ export function BufferList(): JSX.Element {
     return list
   }, [groups, visible, pinned])
   /**
-   * The mentions page has no rail tile and belongs to no server, so there is
-   * no group for this pane to show.
-   *
-   * Called out rather than left to the fallback below, which exists for a
-   * selection that has gone stale and lands on the first entry. That is right
-   * for a guild that was left, and wrong here: the mentions page is a real
-   * destination, and falling back filled the sidebar with an unrelated
-   * server's channels and put its account on the plaque - an identity nobody
-   * had selected.
-   */
-  const onMentionsPage = activeGroupId === MENTIONS_GROUP_ID
-  /**
    * Where to go when the selected entry is no longer in the rail.
    *
    * Whatever is being read, if it is still somewhere. An account's tile
@@ -131,12 +118,11 @@ export function BufferList(): JSX.Element {
   // which is exactly what it looked like.
   const onInvite = activeGroupId.startsWith(INVITE_PREFIX)
 
-  const activeGroup =
-    onMentionsPage || onInvite
-      ? undefined
-      : shownGroups.find((g) => g.id === activeGroupId) ||
-        shownGroups.find((g) => g.id === openBufferGroup) ||
-        shownGroups[0]
+  const activeGroup = onInvite
+    ? undefined
+    : shownGroups.find((g) => g.id === activeGroupId) ||
+    shownGroups.find((g) => g.id === openBufferGroup) ||
+    shownGroups[0]
   /**
    * Settles a selection that had to be resolved by falling back.
    *
@@ -147,9 +133,9 @@ export function BufferList(): JSX.Element {
    * once means the next change has a real selection to keep.
    */
   useEffect(() => {
-    if (onMentionsPage || onInvite || !activeGroup) return
+    if (onInvite || !activeGroup) return
     if (activeGroup.id !== activeGroupId) store.selectGroup(activeGroup.id)
-  }, [activeGroup, activeGroupId, onMentionsPage, onInvite, store])
+  }, [activeGroup, activeGroupId, onInvite, store])
 
   const isPinnedPage = activeGroup?.id === PINNED_GROUP_ID
   const isDmPage = activeGroup?.id === DM_GROUP_ID
@@ -165,16 +151,9 @@ export function BufferList(): JSX.Element {
    */
   const activeBuffer = buffers.find((b) => b.id === activeBufferId)
   const groupAccount =
-    // The mentions page is nobody's: it gathers every service, and the fallback
-    // chain below would put the account of whatever happens to be open behind
-    // it onto the plaque. The one exception is a live call - the microphone and
-    // speaker buttons live on the plaque and nowhere else, and taking them away
-    // because of which page is open leaves no way to mute mid-call.
-    onMentionsPage && voiceSessions.length === 0
-      ? undefined
-      : (accounts.find((a) => a.id === activeGroup?.accountId) ??
-        accounts.find((a) => a.id === activeBuffer?.accountId) ??
-        accounts[0])
+    accounts.find((a) => a.id === activeGroup?.accountId) ??
+    accounts.find((a) => a.id === activeBuffer?.accountId) ??
+    accounts[0]
 
   /**
    * What the pane lists, in reading order: pinned first, then direct messages,
@@ -388,10 +367,7 @@ export function BufferList(): JSX.Element {
           </div>
         )}
 
-        {/* Not on the mentions page, which is deliberately server-less: the
-            pane is empty there because there is nothing to list, not because
-            something still needs picking. */}
-        {accounts.length > 0 && !activeGroup && !onMentionsPage && (
+        {accounts.length > 0 && !activeGroup && (
           <div className="bufferlist-empty muted small">Select a server on the left.</div>
         )}
 
